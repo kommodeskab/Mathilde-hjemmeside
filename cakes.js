@@ -1,0 +1,131 @@
+// Auto-synkroniseret fra cakes.json
+const CAKES = [
+  {
+    "id": "kaempe-hindbaersnitte-i-bradepande",
+    "title": "Kæmpe hindbærsnitte i bradepande",
+    "dateAdded": "20. oktober 2026",
+    "published": true,
+    "ratings": [],
+    "shortDescription": "Klassisk, sprød hindbærsnitte bagt i en hel bradepande med sød hindbærmarmelade, tyk glasur og farverigt krymmel.",
+    "ingredients": [
+      "Hvedemel",
+      "Flormelis",
+      "Bagepulver",
+      "Smør",
+      "Æg",
+      "Hindbærmarmelade",
+      "Krymmel"
+    ],
+    "image": "uploads/hindbaersnitte.jpg"
+  },
+  {
+    "id": "studenterbroed",
+    "title": "Studenterbrød",
+    "dateAdded": "20. oktober 2026",
+    "published": true,
+    "ratings": [],
+    "shortDescription": "Hjemmelavede studenterbrød med sprød mørdejsbund, hindbærmarmelade, fyldig kakaotrøffel og lyserød glasur med krymmel.",
+    "ingredients": [
+      "Hvedemel",
+      "Flormelis",
+      "Salt",
+      "Smør",
+      "Æg",
+      "Vand",
+      "Kagerester",
+      "Mørk chokolade",
+      "Marcipan",
+      "Mørk rom",
+      "Hindbærmarmelade",
+      "Lyserød farvepasta",
+      "Krymmel"
+    ],
+    "image": "uploads/studenterbroed.jpg"
+  },
+  {
+    "id": "hindbaermuffins-med-hvid-chokolade",
+    "title": "Hindbærmuffins med hvid chokolade",
+    "dateAdded": "20. oktober 2026",
+    "published": true,
+    "ratings": [],
+    "shortDescription": "Svampede og luftige vaniljemuffins fyldt med syrlige hindbær og stykker af sød hvid chokolade.",
+    "ingredients": [
+      "Smør",
+      "Æg",
+      "Sukker",
+      "Sødmælk",
+      "Hvedemel",
+      "Bagepulver",
+      "Vaniljesukker",
+      "Hvid chokolade",
+      "Hindbær"
+    ],
+    "image": "uploads/hindbaermuffins.jpg"
+  },
+  {
+    "id": "pavlova",
+    "title": "Pavlova med friske bær",
+    "dateAdded": "20. oktober 2026",
+    "published": true,
+    "ratings": [],
+    "shortDescription": "Luftig marengskage med sprød yderside og sej midte, toppet med blødt flødeskum og masser af friske sommerbær.",
+    "ingredients": [
+      "Æggehvider",
+      "Sukker",
+      "Majsstivelse",
+      "Hvidvinseddike",
+      "Vaniljesukker",
+      "Piskefløde",
+      "Friske bær",
+      "Flormelis"
+    ],
+    "image": "uploads/pavlova.jpg"
+  },
+  {
+    "id": "chokoladekage-med-oreo",
+    "title": "Chokoladekage med Oreo",
+    "dateAdded": "20. oktober 2026",
+    "published": true,
+    "ratings": [],
+    "shortDescription": "Snasket og syndig chokoladekage med hakket mørk chokolade, blød chokoladeglasur og masser af knuste Oreo-kiks.",
+    "ingredients": [
+      "Hvedemel",
+      "Sukker",
+      "Raps- eller solsikkeolie",
+      "Bagepulver",
+      "Æg",
+      "Mælk",
+      "Bagekakao",
+      "Salt",
+      "Mørk chokolade",
+      "Oreo-kiks",
+      "Smør",
+      "Flormelis",
+      "Vand",
+      "Vaniljesukker"
+    ],
+    "image": "uploads/chokoladekage-med-oreo.png"
+  },
+  {
+    "id": "verdens-bedste-chocolate-chip-cookies",
+    "title": "Verdens bedste chocolate chip cookies",
+    "dateAdded": "20. oktober 2026",
+    "published": true,
+    "ratings": [],
+    "shortDescription": "Klassiske amerikanske chocolate chip cookies med sprøde kanter, sej midte, ægte vanilje, store stykker mørk chokolade og flagesalt.",
+    "ingredients": [
+      "Hvedemel",
+      "Natron",
+      "Bagepulver",
+      "Fint salt",
+      "Smør",
+      "Brun farin",
+      "Sukker",
+      "Æg",
+      "Vaniljestang",
+      "Mørk chokolade",
+      "Havsalt"
+    ],
+    "image": "uploads/chocolate-chip-cookies.jpg"
+  }
+];

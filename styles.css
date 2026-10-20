@@ -1,0 +1,1046 @@
+/* ==========================================================================
+   Cake-Themed Stylesheet (styles.css)
+   Palette: Vanilla Cream, Strawberry Frosting, Warm Caramel & Dark Ganache
+   ========================================================================== */
+
+:root {
+  --bg-cream: #fffaf5;
+  --bg-blush: #fdf1f3;
+  --card-bg: #ffffff;
+  --frosting-pink: #f4c6cf;
+  --berry-accent: #c94a6a;
+  --berry-hover: #a83553;
+  --caramel-gold: #d48c46;
+  --ganache-dark: #36201a;
+  --cocoa-muted: #6e5046;
+  --sugar-border: #f0dce0;
+  --shadow-soft: 0 10px 30px rgba(54, 32, 26, 0.07);
+  --shadow-hover: 0 16px 38px rgba(201, 74, 106, 0.15);
+  --radius-lg: 22px;
+  --radius-md: 14px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Georgia", "Palatino Linotype", "Book Antiqua", serif;
+  background-color: var(--bg-cream);
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(244, 198, 207, 0.28) 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(212, 140, 70, 0.14) 0%, transparent 45%);
+  color: var(--ganache-dark);
+  line-height: 1.65;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Subtle top sprinkles / frosting ribbon */
+.frosting-banner {
+  background: linear-gradient(135deg, #fbe0e6 0%, #f7cbd4 50%, #f9e4d4 100%);
+  border-bottom: 3px dashed var(--berry-accent);
+  padding: 2.6rem 1.5rem 2.2rem;
+  text-align: center;
+  position: relative;
+}
+
+.header-inner {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.site-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  text-decoration: none;
+  color: var(--ganache-dark);
+  font-size: clamp(1.65rem, 4.8vw, 2.3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.site-logo h1 {
+  font-size: inherit;
+  font-weight: inherit;
+  margin: 0;
+}
+
+.site-logo .cake-icon {
+  font-size: clamp(1.75rem, 5vw, 2.4rem);
+  filter: drop-shadow(0 3px 4px rgba(54, 32, 26, 0.12));
+}
+
+.site-tagline {
+  margin-top: 0.55rem;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1rem;
+  color: var(--cocoa-muted);
+  font-weight: 500;
+}
+
+/* Main container */
+.container {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+  flex: 1;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 2px solid var(--sugar-border);
+}
+
+.section-title {
+  font-size: 1.45rem;
+  color: var(--ganache-dark);
+}
+
+.sort-pill {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.85rem;
+  background-color: var(--bg-blush);
+  color: var(--berry-accent);
+  border: 1px solid var(--frosting-pink);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Start Page: Vertical Cake List (Newest at Top -> First Added at Bottom)
+   ========================================================================== */
+
+.cake-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.85rem;
+}
+
+.cake-card {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  background: var(--card-bg);
+  border: 2px solid var(--sugar-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.cake-card:hover,
+.cake-card:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--berry-accent);
+  outline: none;
+}
+
+.cake-card-image-wrap {
+  position: relative;
+  height: 100%;
+  min-height: 230px;
+  background-color: var(--bg-blush);
+  overflow: hidden;
+}
+
+.cake-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.cake-card:hover .cake-card-image {
+  transform: scale(1.05);
+}
+
+.cake-card-body {
+  padding: 1.65rem 1.85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cake-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.55rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.8rem;
+}
+
+.cake-badge {
+  background-color: var(--berry-accent);
+  color: #fff;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.cake-date {
+  color: var(--cocoa-muted);
+  font-weight: 500;
+}
+
+.cake-card-title {
+  font-size: 1.5rem;
+  margin-bottom: 0.6rem;
+  color: var(--ganache-dark);
+  transition: color 0.2s ease;
+}
+
+.cake-card:hover .cake-card-title {
+  color: var(--berry-accent);
+}
+
+.cake-card-desc {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--cocoa-muted);
+  font-size: 0.98rem;
+  margin-bottom: 1.15rem;
+}
+
+.cake-card-cta {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--berry-accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: auto;
+}
+
+.cake-card:hover .cake-card-cta {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Dedicated Cake Page (cake.html)
+   ========================================================================== */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--berry-accent);
+  text-decoration: none;
+  background: var(--card-bg);
+  border: 1.5px solid var(--sugar-border);
+  padding: 0.55rem 1.05rem;
+  border-radius: 999px;
+  margin-bottom: 1.75rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.back-link:hover {
+  background: var(--bg-blush);
+  border-color: var(--berry-accent);
+}
+
+.cake-detail-card {
+  background: var(--card-bg);
+  border: 2px solid var(--sugar-border);
+  border-radius: var(--radius-lg);
+  padding: 2.2rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.cake-detail-header {
+  margin-bottom: 1.5rem;
+}
+
+.cake-detail-title {
+  font-size: 2.15rem;
+  line-height: 1.25;
+  margin-top: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.cake-detail-lead {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1.1rem;
+  color: var(--cocoa-muted);
+}
+
+/* Featured Image */
+.featured-figure {
+  margin: 1.5rem 0 1.75rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid var(--sugar-border);
+  background: var(--bg-blush);
+}
+
+.featured-image {
+  width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Ingredients List */
+.ingredients-section {
+  background: var(--bg-blush);
+  border: 1.5px dashed var(--berry-accent);
+  border-radius: var(--radius-md);
+  padding: 1.35rem 1.5rem;
+  margin: 1.75rem 0;
+}
+
+.ingredients-section h2 {
+  font-size: 1.3rem;
+  margin-bottom: 0.75rem;
+  color: var(--ganache-dark);
+}
+
+.ingredients-list {
+  list-style: disc;
+  padding-left: 1.35rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.45rem 1.5rem;
+}
+
+.ingredients-list li {
+  font-size: 0.98rem;
+  color: var(--ganache-dark);
+}
+
+.cake-story h2 {
+  font-size: 1.35rem;
+  margin-bottom: 0.85rem;
+  color: var(--ganache-dark);
+}
+
+.cake-story p {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1.02rem;
+  color: var(--ganache-dark);
+  margin-bottom: 1.1rem;
+  line-height: 1.75;
+}
+
+/* Footer */
+.site-footer {
+  text-align: center;
+  padding: 2rem 1.25rem;
+  border-top: 2px dashed var(--sugar-border);
+  background: var(--bg-blush);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.9rem;
+  color: var(--cocoa-muted);
+}
+
+.site-footer code {
+  background: #fff;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--sugar-border);
+  color: var(--berry-accent);
+}
+
+/* ==========================================================================
+   Login Button, Modal & Admin Screen
+   ========================================================================== */
+
+.top-right-btn {
+  position: absolute;
+  top: 1.1rem;
+  right: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ganache-dark);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1.5px solid var(--berry-accent);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.top-right-btn:hover {
+  background: var(--berry-accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* Login Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(54, 32, 26, 0.48);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal-card {
+  background: var(--card-bg);
+  border: 2px solid var(--sugar-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px rgba(54, 32, 26, 0.22);
+  width: 100%;
+  max-width: 420px;
+  padding: 1.75rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.45rem;
+}
+
+.modal-header h2 {
+  font-size: 1.4rem;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--cocoa-muted);
+  cursor: pointer;
+}
+
+.modal-subtitle {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.92rem;
+  color: var(--cocoa-muted);
+  margin-bottom: 1.15rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+}
+
+/* Buttons & Forms */
+.btn {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.6rem 1.15rem;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--berry-accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--berry-hover);
+}
+
+.btn-secondary {
+  background: var(--bg-blush);
+  color: var(--ganache-dark);
+  border-color: var(--sugar-border);
+}
+
+.btn-secondary:hover {
+  border-color: var(--berry-accent);
+}
+
+.btn-danger {
+  background: #fff0f2;
+  color: #b91c1c;
+  border-color: #fecdd3;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+  color: #fff;
+  border-color: #b91c1c;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ganache-dark);
+  margin-bottom: 0.4rem;
+}
+
+.label-sub {
+  font-weight: 400;
+  color: var(--cocoa-muted);
+  font-size: 0.82rem;
+  margin-left: 0.35rem;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  color: var(--ganache-dark);
+  background: var(--bg-cream);
+  border: 1.5px solid var(--sugar-border);
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--berry-accent);
+  box-shadow: 0 0 0 3px rgba(201, 74, 106, 0.14);
+  background: #fff;
+}
+
+.form-error {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.88rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.65rem;
+}
+
+/* Admin Cake List */
+.admin-hint {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.88rem;
+  color: var(--cocoa-muted);
+  margin-top: 0.2rem;
+}
+
+.status-toast {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  font-weight: 600;
+}
+
+.admin-cake-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-cake-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  align-items: center;
+  gap: 1.15rem;
+  background: var(--card-bg);
+  border: 2px solid var(--sugar-border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.15rem 0.85rem 0.85rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.admin-cake-row:hover {
+  transform: translateY(-2px);
+  border-color: var(--berry-accent);
+  box-shadow: var(--shadow-hover);
+}
+
+.admin-cake-row.unpublished-row {
+  background: #faf6f6;
+  opacity: 0.86;
+}
+
+.admin-row-thumb {
+  width: 110px;
+  height: 85px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--bg-blush);
+}
+
+.admin-row-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.6rem;
+  margin-bottom: 0.25rem;
+}
+
+.status-pill {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+}
+
+.status-published {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-unpublished {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.admin-row-title {
+  font-size: 1.2rem;
+  margin-bottom: 0.2rem;
+}
+
+.admin-row-desc {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.88rem;
+  color: var(--cocoa-muted);
+}
+
+.admin-row-arrow {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--berry-accent);
+  white-space: nowrap;
+}
+
+/* Editor Image Upload & Actions */
+.image-upload-box {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  gap: 1.25rem;
+  align-items: center;
+  background: var(--bg-blush);
+  border: 1.5px dashed var(--sugar-border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.image-upload-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  align-items: flex-start;
+}
+
+.upload-or {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.82rem;
+  color: var(--cocoa-muted);
+}
+
+.image-preview-wrap {
+  width: 180px;
+  height: 135px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid var(--sugar-border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.image-preview-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-placeholder-text {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.8rem;
+  color: var(--cocoa-muted);
+  padding: 0.5rem;
+}
+
+.publish-toggle-box {
+  background: var(--bg-blush);
+  border: 1px solid var(--sugar-border);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--berry-accent);
+}
+
+.editor-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1.5px solid var(--sugar-border);
+}
+
+.editor-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.empty-state {
+  font-family: system-ui, -apple-system, sans-serif;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--cocoa-muted);
+}
+
+/* ==========================================================================
+   Cake Rating (1–5 "Cakes")
+   ========================================================================== */
+
+.cake-rating-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 0.7rem;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.detail-rating-summary {
+  margin-top: 0.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.static-cake-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.rating-cake-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.rating-cake-icon.empty {
+  opacity: 0.28;
+  filter: grayscale(85%);
+}
+
+.cake-rating-buttons {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.rate-cake-btn {
+  background: none;
+  border: none;
+  padding: 0.1rem 0.15rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: transform 0.15s ease, opacity 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+}
+
+.rate-cake-btn.empty {
+  opacity: 0.3;
+  filter: grayscale(85%);
+}
+
+.rate-cake-btn.filled,
+.rate-cake-btn.hover-active {
+  opacity: 1;
+  filter: none;
+}
+
+.rate-cake-btn:hover,
+.rate-cake-btn.hover-active {
+  transform: scale(1.18);
+}
+
+.cake-rating-text {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--berry-accent);
+}
+
+/* Dedicated Cake Page Rating Box */
+.rate-this-cake-box {
+  background: var(--bg-blush);
+  border: 1.5px solid var(--sugar-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.rate-this-cake-box h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+  color: var(--ganache-dark);
+}
+
+.rate-box-subtitle {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.92rem;
+  color: var(--cocoa-muted);
+  margin-bottom: 0.85rem;
+}
+
+.large-rating-buttons {
+  gap: 0.5rem;
+}
+
+.large-rating-buttons .rate-cake-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  background: #fff;
+  border: 1.5px solid var(--sugar-border);
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  min-width: 52px;
+  min-height: 56px;
+}
+
+.large-rating-buttons .rate-cake-btn:hover,
+.large-rating-buttons .rate-cake-btn.hover-active {
+  border-color: var(--berry-accent);
+  background: #fff8fa;
+}
+
+.rate-btn-emoji {
+  font-size: 1.55rem;
+}
+
+.rate-btn-number {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ganache-dark);
+}
+
+.rate-feedback-msg {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #065f46;
+  margin-top: 0.85rem;
+}
+
+/* ==========================================================================
+   Responsive Design: iPads / Tablets & Phones
+   ========================================================================== */
+
+/* Tablets & Portrait iPads */
+@media (max-width: 860px) {
+  .frosting-banner {
+    padding: 3.4rem 1.25rem 1.85rem;
+  }
+
+  .top-right-btn {
+    top: 0.8rem;
+    right: 0.9rem;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .container {
+    padding: 1.85rem 1.15rem 3rem;
+  }
+
+  .cake-card {
+    grid-template-columns: 230px 1fr;
+  }
+
+  .cake-card-body {
+    padding: 1.35rem 1.45rem;
+  }
+
+  .cake-detail-card {
+    padding: 1.75rem;
+  }
+}
+
+/* Phones & Phablets */
+@media (max-width: 680px) {
+  .frosting-banner {
+    padding: 3.3rem 1rem 1.5rem;
+  }
+
+  .cake-list {
+    gap: 1.35rem;
+  }
+
+  .cake-card {
+    grid-template-columns: 1fr;
+  }
+
+  .cake-card-image-wrap {
+    min-height: 200px;
+    max-height: 235px;
+  }
+
+  .cake-card-body {
+    padding: 1.25rem 1.25rem 1.35rem;
+  }
+
+  .cake-card-title {
+    font-size: 1.32rem;
+  }
+
+  .cake-detail-card {
+    padding: 1.25rem;
+    border-radius: 16px;
+  }
+
+  .cake-detail-title {
+    font-size: 1.6rem;
+  }
+
+  .cake-detail-lead {
+    font-size: 1rem;
+  }
+
+  .featured-image {
+    max-height: 320px;
+  }
+
+  .rate-this-cake-box {
+    padding: 1.1rem 1rem;
+  }
+
+  .ingredients-section {
+    padding: 1.15rem 1.2rem;
+  }
+
+  .ingredients-list {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-cake-row {
+    grid-template-columns: 80px 1fr;
+    gap: 0.85rem;
+    padding: 0.75rem;
+  }
+
+  .admin-row-thumb {
+    width: 80px;
+    height: 75px;
+  }
+
+  .admin-row-arrow {
+    display: none;
+  }
+
+  .image-upload-box {
+    grid-template-columns: 1fr;
+  }
+
+  .image-preview-wrap {
+    width: 100%;
+    height: 180px;
+  }
+
+  .editor-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .editor-primary-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .editor-primary-actions .btn,
+  #delete-cake-btn {
+    width: 100%;
+  }
+}
+
+/* Compact Phones (e.g., iPhone SE / narrow viewports) */
+@media (max-width: 420px) {
+  .container {
+    padding: 1.35rem 0.85rem 2.5rem;
+  }
+
+  .large-rating-buttons {
+    gap: 0.35rem;
+  }
+
+  .large-rating-buttons .rate-cake-btn {
+    padding: 0.45rem 0.55rem;
+    min-width: 46px;
+  }
+
+  .modal-card {
+    padding: 1.35rem;
+  }
+}

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kagedetaljer • Mathildes Kager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="frosting-banner">
+    <button type="button" id="header-login-btn" class="top-right-btn">🔒 Log ind</button>
+    <div class="header-inner">
+      <a href="index.html" class="site-logo">
+        <span class="cake-icon" aria-hidden="true">🎂</span>
+        <span>Mathildes Kager</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <a href="index.html" class="back-link">&larr; Tilbage til alle kager</a>
+
+    <article id="cake-detail" class="cake-detail-card" aria-live="polite">
+      <!-- Indsættes dynamisk ud fra ?id=... -->
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p>🧁 Mathildes Kager &bull; <a href="index.html" style="color: inherit;">Tilbage til forsiden</a></p>
+  </footer>
+
+  <script src="supabase-config.js?v=5"></script>
+  <script src="cakes.js?v=5"></script>
+  <script src="store.js?v=5"></script>
+  <script>
+    CakeStore.setupHeaderLoginButton();
+
+    (async function renderCakeDetail() {
+      const container = document.getElementById("cake-detail");
+      if (!container) return;
+
+      const params = new URLSearchParams(window.location.search);
+      const cakeId = params.get("id");
+
+      const cakes = await CakeStore.getPublishedCakes();
+      const cake = cakes.find((item) => item.id === cakeId);
+
+      if (!cake) {
+        container.innerHTML = `<p>Kagen blev ikke fundet. <a href="index.html">Gå tilbage til forsiden</a>.</p>`;
+        return;
+      }
+
+      document.title = `${cake.title} • Mathildes Kager`;
+
+      const stats = CakeStore.getRatingStats(cake);
+
+      const ingredientsHtml =
+        Array.isArray(cake.ingredients) && cake.ingredients.length > 0
+          ? `
+            <section class="ingredients-section">
+              <h2>🥣 Ingredienser</h2>
+              <ul class="ingredients-list">
+                ${cake.ingredients.map((item) => `<li>${item}</li>`).join("")}
+              </ul>
+            </section>
+          `
+          : "";
+
+      container.innerHTML = `
+        <header class="cake-detail-header">
+          <div class="cake-meta">
+            <span class="cake-date">${cake.dateAdded || ""}</span>
+          </div>
+          <h1 class="cake-detail-title">${cake.title}</h1>
+          <div class="cake-rating-row detail-rating-summary" id="detail-rating-summary">
+            <div class="static-cake-icons" id="detail-static-icons">
+              ${CakeStore.renderStaticCakeIcons(stats.rounded)}
+            </div>
+            <span class="cake-rating-text" id="detail-rating-label">${stats.label}</span>
+          </div>
+          <p class="cake-detail-lead">${cake.shortDescription}</p>
+        </header>
+
+        <figure class="featured-figure">
+          <img
+            class="featured-image"
+            src="${cake.image}"
+            alt="${cake.title}"
+          />
+        </figure>
+
+        <section class="rate-this-cake-box">
+          <h2>🍰 Bedøm denne kage</h2>
+          <p class="rate-box-subtitle">Klik på 1 til 5 kager for at give din bedømmelse:</p>
+          <div class="cake-rating-buttons large-rating-buttons" id="detail-rate-buttons" role="group" aria-label="Bedøm fra 1 til 5 kager">
+            ${[1, 2, 3, 4, 5]
+              .map(
+                (num) => `
+                <button
+                  type="button"
+                  class="rate-cake-btn ${num <= stats.rounded ? "filled" : "empty"}"
+                  data-rating="${num}"
+                  title="Giv ${num} ${num === 1 ? "kage" : "kager"}"
+                  aria-label="Giv ${num} ${num === 1 ? "kage" : "kager"}"
+                >
+                  <span class="rate-btn-emoji">🍰</span>
+                  <span class="rate-btn-number">${num}</span>
+                </button>
+              `
+              )
+              .join("")}
+          </div>
+          <p id="detail-rate-feedback" class="rate-feedback-msg" style="display: none;"></p>
+        </section>
+
+        ${ingredientsHtml}
+      `;
+
+      // Interaktiv bedømmelse på kagens side
+      const btnGroup = document.getElementById("detail-rate-buttons");
+      const buttons = btnGroup.querySelectorAll(".rate-cake-btn");
+      const feedbackEl = document.getElementById("detail-rate-feedback");
+      const summaryIconsEl = document.getElementById("detail-static-icons");
+      const summaryLabelEl = document.getElementById("detail-rating-label");
+
+      buttons.forEach((btn) => {
+        btn.addEventListener("mouseenter", () => {
+          const val = Number(btn.getAttribute("data-rating"));
+          buttons.forEach((b) => {
+            const bVal = Number(b.getAttribute("data-rating"));
+            b.classList.toggle("hover-active", bVal <= val);
+          });
+        });
+
+        btn.addEventListener("mouseleave", () => {
+          buttons.forEach((b) => b.classList.remove("hover-active"));
+        });
+
+        btn.addEventListener("click", async () => {
+          const rating = Number(btn.getAttribute("data-rating"));
+          const res = await CakeStore.rateCake(cake.id, rating);
+          if (res.ok && res.cake) {
+            const updatedStats = CakeStore.getRatingStats(res.cake);
+            summaryIconsEl.innerHTML = CakeStore.renderStaticCakeIcons(updatedStats.rounded);
+            summaryLabelEl.textContent = updatedStats.label;
+
+            buttons.forEach((b) => {
+              const bVal = Number(b.getAttribute("data-rating"));
+              b.classList.toggle("filled", bVal <= updatedStats.rounded);
+              b.classList.toggle("empty", bVal > updatedStats.rounded);
+            });
+
+            feedbackEl.textContent = `Tak! Du gav kagen ${rating} ${rating === 1 ? "kage" : "kager"}. Gennemsnit: ${updatedStats.label}`;
+            feedbackEl.style.display = "block";
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

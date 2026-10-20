@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration • Mathildes Kager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="frosting-banner">
+    <button type="button" id="logout-btn" class="top-right-btn" style="display: none;">Log ud</button>
+    <div class="header-inner">
+      <a href="index.html" class="site-logo">
+        <span class="cake-icon" aria-hidden="true">🎂</span>
+        <h1>Mathildes Kager</h1>
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="admin-top-bar">
+      <a href="index.html" class="back-link">&larr; Se offentlig hjemmeside</a>
+    </div>
+
+    <!-- VISNING 0: Log ind (hvis man åbner admin.html direkte uden at være logget ind) -->
+    <section id="admin-login-view" class="cake-detail-card" style="display: none; max-width: 460px; margin: 1rem auto;">
+      <h2 style="margin-bottom: 0.5rem;">🔒 Log ind</h2>
+      <p class="modal-subtitle">Indtast adgangskoden for at redigere og tilføje kager.</p>
+      <form id="admin-page-login-form">
+        <label class="form-label" for="admin-page-pw">Adgangskode</label>
+        <input
+          type="password"
+          id="admin-page-pw"
+          class="form-input"
+          placeholder="Indtast adgangskode..."
+          required
+        />
+        <p id="admin-page-login-err" class="form-error" style="display: none;"></p>
+        <div class="modal-actions" style="margin-top: 1.25rem;">
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Log ind</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- VISNING 1: Oversigt over alle kager -->
+    <section id="admin-list-view" style="display: none;">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Alle kager</h2>
+          <p class="admin-hint">Klik på en kage i listen for at redigere den, skjule den eller slette den.</p>
+        </div>
+        <button type="button" id="add-new-cake-btn" class="btn btn-primary">+ Tilføj ny kage</button>
+      </div>
+
+      <div id="admin-status-banner" class="status-toast" style="display: none;"></div>
+
+      <div id="admin-cake-list" class="admin-cake-list"></div>
+    </section>
+
+    <!-- VISNING 2: Rediger kage / Tilføj ny kage -->
+    <section id="admin-edit-view" class="cake-detail-card" style="display: none;">
+      <div class="admin-edit-header">
+        <button type="button" id="back-to-list-btn" class="back-link" style="margin-bottom: 1rem;">
+          &larr; Tilbage til kagelisten
+        </button>
+        <h2 id="editor-heading" class="cake-detail-title" style="font-size: 1.75rem;">Rediger kage</h2>
+        <p id="editor-meta-info" class="cake-date" style="margin-bottom: 1.25rem;"></p>
+      </div>
+
+      <form id="cake-editor-form">
+        <div class="form-group">
+          <label class="form-label" for="cake-title-input">Kagens titel *</label>
+          <input
+            type="text"
+            id="cake-title-input"
+            class="form-input"
+            placeholder="F.eks. Citronmarengskage"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cake-short-desc-input">Beskrivelse *</label>
+          <textarea
+            id="cake-short-desc-input"
+            class="form-textarea"
+            rows="3"
+            placeholder="En kort og appetitvækkende beskrivelse af kagen..."
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="cake-ingredients-input">
+            Ingredienser *
+            <span class="label-sub">Skriv én ingrediens pr. linje (kun navnet på ingrediensen)</span>
+          </label>
+          <textarea
+            id="cake-ingredients-input"
+            class="form-textarea"
+            rows="7"
+            placeholder="Hvedemel&#10;Sukker&#10;Smør&#10;Æg"
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Billede af kagen *</label>
+          <div class="image-upload-box">
+            <div class="image-upload-controls">
+              <label class="btn btn-secondary file-upload-label">
+                📷 Vælg billede fra enhed
+                <input type="file" id="cake-image-file-input" accept="image/*" style="display: none;" />
+              </label>
+              <span class="upload-or">eller indsæt billedlink herunder:</span>
+              <input
+                type="text"
+                id="cake-image-url-input"
+                class="form-input"
+                placeholder="https://... eller uploads/..."
+                required
+              />
+              <p id="upload-status-msg" class="admin-hint"></p>
+            </div>
+            <div class="image-preview-wrap">
+              <img
+                id="cake-image-preview"
+                src=""
+                alt="Forhåndsvisning"
+                style="display: none;"
+              />
+              <span id="cake-image-placeholder" class="image-placeholder-text">Intet billede valgt</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group publish-toggle-box">
+          <label class="checkbox-label">
+            <input type="checkbox" id="cake-published-checkbox" checked />
+            <span><strong>Publiceret på hjemmesiden</strong> (fjern fluebenet for at skjule/upublicere kagen på den offentlige side)</span>
+          </label>
+        </div>
+
+        <p id="editor-error-msg" class="form-error" style="display: none;"></p>
+
+        <div class="editor-actions-bar">
+          <div class="editor-primary-actions">
+            <button type="submit" id="save-cake-btn" class="btn btn-primary">💾 Gem kage</button>
+            <button type="button" id="toggle-publish-btn" class="btn btn-secondary" style="display: none;">
+              Skjul kage (Upublicer)
+            </button>
+            <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Annuller</button>
+          </div>
+          <button type="button" id="delete-cake-btn" class="btn btn-danger" style="display: none;">
+            🗑️ Slet kage
+          </button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>🧁 Mathildes Kager &bull; Administrationspanel</p>
+  </footer>
+
+  <script src="supabase-config.js?v=5"></script>
+  <script src="cakes.js?v=5"></script>
+  <script src="store.js?v=5"></script>
+  <script>
+    (function initAdminPage() {
+      const loginView = document.getElementById("admin-login-view");
+      const listView = document.getElementById("admin-list-view");
+      const editView = document.getElementById("admin-edit-view");
+      const logoutBtn = document.getElementById("logout-btn");
+      const listContainer = document.getElementById("admin-cake-list");
+      const statusBanner = document.getElementById("admin-status-banner");
+
+      // Formular-elementer
+      const editorForm = document.getElementById("cake-editor-form");
+      const editorHeading = document.getElementById("editor-heading");
+      const editorMetaInfo = document.getElementById("editor-meta-info");
+      const titleInput = document.getElementById("cake-title-input");
+      const shortDescInput = document.getElementById("cake-short-desc-input");
+      const ingredientsInput = document.getElementById("cake-ingredients-input");
+      const imageUrlInput = document.getElementById("cake-image-url-input");
+      const imageFileInput = document.getElementById("cake-image-file-input");
+      const imagePreview = document.getElementById("cake-image-preview");
+      const imagePlaceholder = document.getElementById("cake-image-placeholder");
+      const uploadStatusMsg = document.getElementById("upload-status-msg");
+      const publishedCheckbox = document.getElementById("cake-published-checkbox");
+      const togglePublishBtn = document.getElementById("toggle-publish-btn");
+      const deleteCakeBtn = document.getElementById("delete-cake-btn");
+      const editorErrorMsg = document.getElementById("editor-error-msg");
+
+      let allCakes = [];
+      let editingCakeId = null; // null = opret ny kage
+
+      function showToast(message) {
+        statusBanner.textContent = message;
+        statusBanner.style.display = "block";
+        setTimeout(() => {
+          statusBanner.style.display = "none";
+        }, 3500);
+      }
+
+      function updateImagePreview(url) {
+        const clean = (url || "").trim();
+        if (clean) {
+          imagePreview.src = clean;
+          imagePreview.style.display = "block";
+          imagePlaceholder.style.display = "none";
+        } else {
+          imagePreview.src = "";
+          imagePreview.style.display = "none";
+          imagePlaceholder.style.display = "block";
+        }
+      }
+
+      function updateTogglePublishButtonText() {
+        if (publishedCheckbox.checked) {
+          togglePublishBtn.textContent = "🙈 Upublicer (skjul fra hjemmesiden)";
+        } else {
+          togglePublishBtn.textContent = "🌍 Publicer på hjemmesiden";
+        }
+      }
+
+      async function loadAndRenderList() {
+        allCakes = await CakeStore.getAllCakes();
+        const newestFirst = [...allCakes].reverse();
+
+        if (newestFirst.length === 0) {
+          listContainer.innerHTML = `<p class="empty-state">Der er ingen kager i listen endnu. Klik på "+ Tilføj ny kage" for at oprette den første.</p>`;
+          return;
+        }
+
+        listContainer.innerHTML = newestFirst
+          .map((cake) => {
+            const isPub = cake.published !== false;
+            const stats = CakeStore.getRatingStats(cake);
+            return `
+              <div class="admin-cake-row ${isPub ? "" : "unpublished-row"}" data-id="${cake.id}" role="button" tabindex="0">
+                <img class="admin-row-thumb" src="${cake.image}" alt="${cake.title}" />
+                <div class="admin-row-info">
+                  <div class="admin-row-top">
+                    <span class="status-pill ${isPub ? "status-published" : "status-unpublished"}">
+                      ${isPub ? "Publiceret" : "Upubliceret (skjult)"}
+                    </span>
+                    <span class="cake-date">${cake.dateAdded || ""}</span>
+                    <span class="cake-date">&bull; 🍰 ${stats.label}</span>
+                  </div>
+                  <h3 class="admin-row-title">${cake.title}</h3>
+                  <p class="admin-row-desc">${cake.shortDescription}</p>
+                </div>
+                <div class="admin-row-arrow">Rediger &rarr;</div>
+              </div>
+            `;
+          })
+          .join("");
+
+        listContainer.querySelectorAll(".admin-cake-row").forEach((row) => {
+          const openRow = () => openEditor(row.getAttribute("data-id"));
+          row.addEventListener("click", openRow);
+          row.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openRow();
+            }
+          });
+        });
+      }
+
+      function showListView() {
+        loginView.style.display = "none";
+        editView.style.display = "none";
+        listView.style.display = "block";
+        logoutBtn.style.display = "inline-flex";
+        loadAndRenderList();
+      }
+
+      function openEditor(cakeId) {
+        editingCakeId = cakeId;
+        editorErrorMsg.style.display = "none";
+        uploadStatusMsg.textContent = "";
+        imageFileInput.value = "";
+
+        if (!cakeId) {
+          // Opret ny kage
+          editorHeading.textContent = "Tilføj ny kage";
+          editorMetaInfo.textContent = "ID og dato genereres automatisk, når du gemmer.";
+          titleInput.value = "";
+          shortDescInput.value = "";
+          ingredientsInput.value = "";
+          imageUrlInput.value = "";
+          publishedCheckbox.checked = true;
+          togglePublishBtn.style.display = "none";
+          deleteCakeBtn.style.display = "none";
+          updateImagePreview("");
+        } else {
+          const cake = allCakes.find((c) => c.id === cakeId);
+          if (!cake) return;
+
+          editorHeading.textContent = "Rediger kage";
+          editorMetaInfo.textContent = `ID: ${cake.id} • Tilføjet: ${cake.dateAdded || ""}`;
+          titleInput.value = cake.title || "";
+          shortDescInput.value = cake.shortDescription || "";
+          ingredientsInput.value = Array.isArray(cake.ingredients)
+            ? cake.ingredients.join("\n")
+            : cake.ingredients || "";
+          imageUrlInput.value = cake.image || "";
+          publishedCheckbox.checked = cake.published !== false;
+          togglePublishBtn.style.display = "inline-flex";
+          deleteCakeBtn.style.display = "inline-flex";
+          updateTogglePublishButtonText();
+          updateImagePreview(cake.image || "");
+        }
+
+        listView.style.display = "none";
+        editView.style.display = "block";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // Håndter billedfil-upload
+      imageFileInput.addEventListener("change", async () => {
+        const file = imageFileInput.files && imageFileInput.files[0];
+        if (!file) return;
+        uploadStatusMsg.textContent = "Uploader billede...";
+        try {
+          const res = await CakeStore.uploadImage(file);
+          if (res.ok && res.url) {
+            imageUrlInput.value = res.url;
+            updateImagePreview(res.url);
+            uploadStatusMsg.textContent = "✓ Billede valgt og klar!";
+          } else {
+            uploadStatusMsg.textContent = "Kunne ikke uploade billede.";
+          }
+        } catch (err) {
+          uploadStatusMsg.textContent = "Fejl ved indlæsning af billede.";
+        }
+      });
+
+      imageUrlInput.addEventListener("input", () => {
+        updateImagePreview(imageUrlInput.value);
+      });
+
+      publishedCheckbox.addEventListener("change", updateTogglePublishButtonText);
+
+      // Hurtig-knap til at publicere / upublicere direkte
+      togglePublishBtn.addEventListener("click", async () => {
+        if (!editingCakeId) return;
+        const newPublishedState = !publishedCheckbox.checked;
+        publishedCheckbox.checked = newPublishedState;
+        updateTogglePublishButtonText();
+
+        const res = await CakeStore.updateCake(editingCakeId, {
+          published: newPublishedState
+        });
+        if (res.ok) {
+          showToast(
+            newPublishedState
+              ? "Kagen er nu publiceret på hjemmesiden."
+              : "Kagen er nu skjult (upubliceret) fra den offentlige hjemmeside."
+          );
+          showListView();
+        }
+      });
+
+      // Slet kage
+      deleteCakeBtn.addEventListener("click", async () => {
+        if (!editingCakeId) return;
+        const cake = allCakes.find((c) => c.id === editingCakeId);
+        const confirmed = window.confirm(
+          `Er du sikker på, at du vil slette "${cake ? cake.title : "denne kage"}" permanent?`
+        );
+        if (!confirmed) return;
+
+        const res = await CakeStore.deleteCake(editingCakeId);
+        if (res.ok) {
+          showToast("Kagen blev slettet.");
+          showListView();
+        }
+      });
+
+      // Gem / Opret kage
+      editorForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        editorErrorMsg.style.display = "none";
+
+        const title = titleInput.value.trim();
+        const shortDescription = shortDescInput.value.trim();
+        const ingredients = ingredientsInput.value
+          .split(/\n/)
+          .map((line) => line.trim())
+          .filter(Boolean);
+        const image = imageUrlInput.value.trim();
+        const published = publishedCheckbox.checked;
+
+        if (!title || !shortDescription || ingredients.length === 0 || !image) {
+          editorErrorMsg.textContent = "Udfyld venligst alle felter og vælg et billede.";
+          editorErrorMsg.style.display = "block";
+          return;
+        }
+
+        const payload = {
+          title,
+          shortDescription,
+          ingredients,
+          image,
+          published
+        };
+
+        if (!editingCakeId) {
+          const res = await CakeStore.createCake(payload);
+          if (res.ok) {
+            showToast("Ny kage tilføjet!");
+            showListView();
+          } else {
+            editorErrorMsg.textContent = res.error || "Kunne ikke oprette kagen.";
+            editorErrorMsg.style.display = "block";
+          }
+        } else {
+          const res = await CakeStore.updateCake(editingCakeId, payload);
+          if (res.ok) {
+            showToast("Ændringer gemt!");
+            showListView();
+          } else {
+            editorErrorMsg.textContent = res.error || "Kunne ikke gemme ændringerne.";
+            editorErrorMsg.style.display = "block";
+          }
+        }
+      });
+
+      document.getElementById("add-new-cake-btn").addEventListener("click", () => openEditor(null));
+      document.getElementById("back-to-list-btn").addEventListener("click", showListView);
+      document.getElementById("cancel-edit-btn").addEventListener("click", showListView);
+
+      logoutBtn.addEventListener("click", () => {
+        CakeStore.logout();
+        window.location.href = "index.html";
+      });
+
+      // Hvis man åbner admin.html direkte uden at være logget ind
+      const pageLoginForm = document.getElementById("admin-page-login-form");
+      pageLoginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const pwInput = document.getElementById("admin-page-pw");
+        const errEl = document.getElementById("admin-page-login-err");
+        errEl.style.display = "none";
+
+        const res = await CakeStore.login(pwInput.value);
+        if (res.ok) {
+          showListView();
+        } else {
+          errEl.textContent = res.error || "Forkert adgangskode";
+          errEl.style.display = "block";
+          pwInput.select();
+        }
+      });
+
+      if (CakeStore.isLoggedIn()) {
+        showListView();
+      } else {
+        loginView.style.display = "block";
+      }
+    })();
+  </script>
+</body>
+</html>

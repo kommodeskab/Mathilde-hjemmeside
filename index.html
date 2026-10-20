@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mathildes Kager</title>
+  <meta name="description" content="Mathildes Kager – en oversigt over hjemmelavede kager." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="frosting-banner">
+    <button type="button" id="header-login-btn" class="top-right-btn">🔒 Log ind</button>
+    <div class="header-inner">
+      <a href="index.html" class="site-logo">
+        <span class="cake-icon" aria-hidden="true">🎂</span>
+        <h1>Mathildes Kager</h1>
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Kagerne indsættes automatisk her -->
+    <div id="cake-list" class="cake-list" aria-live="polite"></div>
+  </main>
+
+  <footer class="site-footer">
+    <p>🧁 Mathildes Kager</p>
+  </footer>
+
+  <script src="supabase-config.js?v=5"></script>
+  <script src="cakes.js?v=5"></script>
+  <script src="store.js?v=5"></script>
+  <script>
+    CakeStore.setupHeaderLoginButton();
+
+    async function renderCakeList() {
+      const listContainer = document.getElementById("cake-list");
+      if (!listContainer) return;
+
+      const publishedCakes = await CakeStore.getPublishedCakes();
+
+      // Vend en kopi om, så den senest tilføjede kage står øverst,
+      // og den først tilføjede kage står nederst.
+      const cakesNewestFirst = [...publishedCakes].reverse();
+
+      if (cakesNewestFirst.length === 0) {
+        listContainer.innerHTML = `<p class="empty-state">Der er ingen publicerede kager endnu.</p>`;
+        return;
+      }
+
+      listContainer.innerHTML = cakesNewestFirst
+        .map((cake) => {
+          const detailUrl = `cake.html?id=${encodeURIComponent(cake.id)}`;
+          const stats = CakeStore.getRatingStats(cake);
+
+          return `
+            <a class="cake-card" href="${detailUrl}">
+              <div class="cake-card-image-wrap">
+                <img
+                  class="cake-card-image"
+                  src="${cake.image}"
+                  alt="${cake.title}"
+                  loading="lazy"
+                />
+              </div>
+              <div class="cake-card-body">
+                <div class="cake-meta">
+                  <span class="cake-date">${cake.dateAdded || ""}</span>
+                </div>
+                <h2 class="cake-card-title">${cake.title}</h2>
+                <div class="cake-rating-row">
+                  <div class="static-cake-icons">
+                    ${CakeStore.renderStaticCakeIcons(stats.rounded)}
+                  </div>
+                  <span class="cake-rating-text">${stats.label}</span>
+                </div>
+                <p class="cake-card-desc">${cake.shortDescription}</p>
+                <span class="cake-card-cta">Læs mere og bedøm kagen &rarr;</span>
+              </div>
+            </a>
+          `;
+        })
+        .join("");
+    }
+
+    renderCakeList();
+  </script>
+</body>
+</html>
