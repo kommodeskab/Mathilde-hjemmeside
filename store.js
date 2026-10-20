@@ -349,11 +349,69 @@ const CakeStore = (function () {
     return { ok: true, cake: newCake, cakes };
   }
 
+  const VOTER_ID_KEY = "mathildes_kager_voter_id";
+  const USER_VOTES_KEY = "mathildes_kager_user_votes";
+
+  function getVoterId() {
+    try {
+      let id = localStorage.getItem(VOTER_ID_KEY);
+      if (!id) {
+        id =
+          "voter-" +
+          Date.now().toString(36) +
+          "-" +
+          Math.random().toString(36).substring(2, 10);
+        localStorage.setItem(VOTER_ID_KEY, id);
+      }
+      return id;
+    } catch (_e) {
+      return "voter-anon";
+    }
+  }
+
+  function getUserVotesMap() {
+    try {
+      const raw = localStorage.getItem(USER_VOTES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") return parsed;
+      }
+    } catch (_e) {}
+    return {};
+  }
+
+  function saveUserVote(cakeId, rating) {
+    try {
+      const map = getUserVotesMap();
+      if (rating === null) {
+        delete map[cakeId];
+      } else {
+        map[cakeId] = rating;
+      }
+      localStorage.setItem(USER_VOTES_KEY, JSON.stringify(map));
+    } catch (_e) {}
+  }
+
+  function getUserRatingForCake(cake) {
+    if (!cake || !cake.id) return null;
+    // Hvis kagens bedømmelser er blevet nulstillet til 0, nulstil også lokalt
+    if (!Array.isArray(cake.ratings) || cake.ratings.length === 0) {
+      saveUserVote(cake.id, null);
+      return null;
+    }
+    const map = getUserVotesMap();
+    return map[cake.id] || null;
+  }
+
   async function rateCake(id, ratingValue) {
     const rating = Number(ratingValue);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return { ok: false, error: "Bedømmelsen skal være mellem 1 og 5 kager" };
     }
+
+    const voterId = getVoterId();
+    const previousVote = getUserVotesMap()[id] || null;
+    const isUpdate = Boolean(previousVote);
 
     if (isSupabaseConfigured()) {
       try {
@@ -362,14 +420,16 @@ const CakeStore = (function () {
           headers: supabaseHeaders(),
           body: JSON.stringify({
             cake_id: id,
-            new_rating: rating
+            new_rating: rating,
+            voter_id: voterId
           })
         });
         if (res.ok) {
+          saveUserVote(id, rating);
           const updatedRow = await res.json();
           const cake = mapRowFromSupabase(updatedRow);
           const cakes = await getAllCakes();
-          return { ok: true, cake, cakes };
+          return { ok: true, isUpdate, cake, cakes };
         }
       } catch (_err) {}
     }
@@ -378,12 +438,13 @@ const CakeStore = (function () {
       const res = await fetch(`/api/cakes/${encodeURIComponent(id)}/rate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating })
+        body: JSON.stringify({ rating, voterId })
       });
       if (res.ok) {
+        saveUserVote(id, rating);
         const data = await res.json();
         saveLocalFallbackCakes(data.cakes);
-        return { ok: true, cake: data.cake, cakes: data.cakes };
+        return { ok: true, isUpdate, cake: data.cake, cakes: data.cakes };
       }
     } catch (_networkError) {}
 
@@ -395,9 +456,19 @@ const CakeStore = (function () {
     if (!Array.isArray(target.ratings)) {
       target.ratings = [];
     }
-    target.ratings.push(rating);
+    if (previousVote !== null) {
+      const idx = target.ratings.indexOf(Number(previousVote));
+      if (idx !== -1) {
+        target.ratings[idx] = rating;
+      } else {
+        target.ratings.push(rating);
+      }
+    } else {
+      target.ratings.push(rating);
+    }
+    saveUserVote(id, rating);
     saveLocalFallbackCakes(cakes);
-    return { ok: true, cake: target, cakes };
+    return { ok: true, isUpdate, cake: target, cakes };
   }
 
   function getRatingStats(cake) {
@@ -541,6 +612,36 @@ const CakeStore = (function () {
     const cakes = getLocalFallbackCakes().filter((c) => c.id !== id);
     saveLocalFallbackCakes(cakes);
     return { ok: true, cakes };
+  }
+
+  async function resetRatings(id) {
+    const pwHash = getSavedPasswordHash();
+    saveUserVote(id, null);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const res = await fetch(supabaseUrl("/rest/v1/rpc/admin_reset_ratings"), {
+          method: "POST",
+          headers: supabaseHeaders(),
+          body: JSON.stringify({
+            pw_hash: pwHash,
+            cake_id: id
+          })
+        });
+        if (res.ok) {
+          const updatedRow = await res.json();
+          const cake = mapRowFromSupabase(updatedRow);
+          const cakes = await getAllCakes();
+          return { ok: true, cake, cakes };
+        }
+        const err = await res.json().catch(() => ({}));
+        return { ok: false, error: err.message || "Kunne ikke nulstille bedømmelser i Supabase" };
+      } catch (_e) {
+        return { ok: false, error: "Netværksfejl mod Supabase" };
+      }
+    }
+
+    return updateCake(id, { ratings: [] });
   }
 
   // Komprimerer og skalerer billeder (maks 1100px bred/høj, JPEG 82%),
@@ -698,7 +799,9 @@ const CakeStore = (function () {
     createCake,
     updateCake,
     deleteCake,
+    resetRatings,
     rateCake,
+    getUserRatingForCake,
     getRatingStats,
     renderStaticCakeIcons,
     uploadImage,

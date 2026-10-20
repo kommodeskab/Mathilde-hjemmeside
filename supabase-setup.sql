@@ -19,8 +19,19 @@ CREATE TABLE IF NOT EXISTS public.cakes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 2. Slå Row Level Security (RLS) til, så kun læsning er åben direkte,
---    mens bedømmelser og admin-ændringer sker gennem sikrede funktioner.
+-- 2. Tabel til at huske hvem der allerede har bedømt en kage (1 bedømmelse pr. bruger pr. kage)
+CREATE TABLE IF NOT EXISTS public.cake_votes (
+  cake_id TEXT NOT NULL,
+  voter_id TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (cake_id, voter_id)
+);
+
+ALTER TABLE public.cake_votes ENABLE ROW LEVEL SECURITY;
+
+-- Slå Row Level Security (RLS) til på cakes, så kun læsning er åben direkte,
+-- mens bedømmelser og admin-ændringer sker gennem sikrede funktioner.
 ALTER TABLE public.cakes ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Alle kan læse kager" ON public.cakes;
@@ -29,25 +40,77 @@ CREATE POLICY "Alle kan læse kager"
   FOR SELECT
   USING (true);
 
--- 3. Funktion så alle besøgende kan bedømme en kage (1-5 kager)
-CREATE OR REPLACE FUNCTION public.rate_cake(cake_id TEXT, new_rating INTEGER)
+-- 3. Funktion så hver besøgende har én bedømmelse pr. kage, men kan ændre sin bedømmelse
+DROP FUNCTION IF EXISTS public.rate_cake(TEXT, INTEGER);
+CREATE OR REPLACE FUNCTION public.rate_cake(
+  cake_id TEXT,
+  new_rating INTEGER,
+  voter_id TEXT DEFAULT NULL
+)
 RETURNS json
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
   updated_row public.cakes;
+  effective_voter TEXT;
+  old_rating INTEGER;
+  current_ratings INTEGER[];
+  pos INTEGER;
 BEGIN
   IF new_rating < 1 OR new_rating > 5 THEN
     RAISE EXCEPTION 'Bedømmelsen skal være mellem 1 og 5';
   END IF;
 
-  UPDATE public.cakes
-  SET ratings = array_append(ratings, new_rating)
-  WHERE id = cake_id
-  RETURNING * INTO updated_row;
+  effective_voter := NULLIF(TRIM(COALESCE(voter_id, '')), '');
+  IF effective_voter IS NULL THEN
+    -- Fallback til besøgendes IP-hash hvis voter_id ikke er angivet
+    effective_voter := encode(
+      sha256(
+        convert_to(
+          COALESCE(current_setting('request.headers', true)::json->>'x-forwarded-for', 'anon'),
+          'UTF8'
+        )
+      ),
+      'hex'
+    );
+  END IF;
 
-  IF NOT FOUND THEN
+  SELECT cv.rating INTO old_rating
+  FROM public.cake_votes cv
+  WHERE cv.cake_id = rate_cake.cake_id AND cv.voter_id = effective_voter;
+
+  IF old_rating IS NULL THEN
+    INSERT INTO public.cake_votes (cake_id, voter_id, rating)
+    VALUES (rate_cake.cake_id, effective_voter, new_rating);
+
+    UPDATE public.cakes
+    SET ratings = array_append(ratings, new_rating)
+    WHERE id = rate_cake.cake_id
+    RETURNING * INTO updated_row;
+  ELSE
+    UPDATE public.cake_votes
+    SET rating = new_rating, created_at = now()
+    WHERE cake_votes.cake_id = rate_cake.cake_id AND cake_votes.voter_id = effective_voter;
+
+    SELECT c.ratings INTO current_ratings
+    FROM public.cakes c
+    WHERE c.id = rate_cake.cake_id;
+
+    pos := array_position(current_ratings, old_rating);
+    IF pos IS NOT NULL THEN
+      current_ratings[pos] := new_rating;
+    ELSE
+      current_ratings := array_append(COALESCE(current_ratings, '{}'), new_rating);
+    END IF;
+
+    UPDATE public.cakes
+    SET ratings = current_ratings
+    WHERE id = rate_cake.cake_id
+    RETURNING * INTO updated_row;
+  END IF;
+
+  IF updated_row.id IS NULL THEN
     RAISE EXCEPTION 'Kagen blev ikke fundet';
   END IF;
 
@@ -158,8 +221,42 @@ BEGIN
     RAISE EXCEPTION 'Uautoriseret: Forkert adgangskode';
   END IF;
 
-  DELETE FROM public.cakes WHERE id = cake_id;
+  DELETE FROM public.cake_votes WHERE cake_id = admin_delete_cake.cake_id;
+  DELETE FROM public.cakes WHERE id = admin_delete_cake.cake_id;
   RETURN true;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.admin_reset_ratings(
+  pw_hash TEXT,
+  cake_id TEXT
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  expected_double_hash CONSTANT TEXT := '01760f4539ecad69c38c21a67754badabe6510e8c6ecc217493d4bdfdc9ab5bd';
+  actual_double_hash TEXT;
+  updated_row public.cakes;
+BEGIN
+  actual_double_hash := encode(sha256(convert_to(COALESCE(pw_hash, ''), 'UTF8')), 'hex');
+  IF actual_double_hash IS DISTINCT FROM expected_double_hash THEN
+    RAISE EXCEPTION 'Uautoriseret: Forkert adgangskode';
+  END IF;
+
+  DELETE FROM public.cake_votes WHERE cake_votes.cake_id = admin_reset_ratings.cake_id;
+
+  UPDATE public.cakes
+  SET ratings = '{}'
+  WHERE id = admin_reset_ratings.cake_id
+  RETURNING * INTO updated_row;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Kagen blev ikke fundet';
+  END IF;
+
+  RETURN row_to_json(updated_row);
 END;
 $$;
 

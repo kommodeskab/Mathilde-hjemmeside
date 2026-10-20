@@ -29,9 +29,9 @@
     <p>🧁 Mathildes Kager &bull; <a href="index.html" style="color: inherit;">Tilbage til forsiden</a></p>
   </footer>
 
-  <script src="supabase-config.js?v=5"></script>
-  <script src="cakes.js?v=5"></script>
-  <script src="store.js?v=5"></script>
+  <script src="supabase-config.js?v=8"></script>
+  <script src="cakes.js?v=8"></script>
+  <script src="store.js?v=8"></script>
   <script>
     CakeStore.setupHeaderLoginButton();
 
@@ -53,6 +53,8 @@
       document.title = `${cake.title} • Mathildes Kager`;
 
       const stats = CakeStore.getRatingStats(cake);
+      const userExistingRating = CakeStore.getUserRatingForCake(cake);
+      const activeCakeCount = userExistingRating || stats.rounded;
 
       const ingredientsHtml =
         Array.isArray(cake.ingredients) && cake.ingredients.length > 0
@@ -91,14 +93,20 @@
 
         <section class="rate-this-cake-box">
           <h2>🍰 Bedøm denne kage</h2>
-          <p class="rate-box-subtitle">Klik på 1 til 5 kager for at give din bedømmelse:</p>
+          <p class="rate-box-subtitle" id="rate-box-subtitle">
+            ${
+              userExistingRating
+                ? `Du har givet denne kage ${userExistingRating} ${userExistingRating === 1 ? "kage" : "kager"} (klik på et andet tal for at ændre din bedømmelse):`
+                : "Klik på 1 til 5 kager for at give din bedømmelse:"
+            }
+          </p>
           <div class="cake-rating-buttons large-rating-buttons" id="detail-rate-buttons" role="group" aria-label="Bedøm fra 1 til 5 kager">
             ${[1, 2, 3, 4, 5]
               .map(
                 (num) => `
                 <button
                   type="button"
-                  class="rate-cake-btn ${num <= stats.rounded ? "filled" : "empty"}"
+                  class="rate-cake-btn ${num <= activeCakeCount ? "filled" : "empty"}"
                   data-rating="${num}"
                   title="Giv ${num} ${num === 1 ? "kage" : "kager"}"
                   aria-label="Giv ${num} ${num === 1 ? "kage" : "kager"}"
@@ -116,10 +124,11 @@
         ${ingredientsHtml}
       `;
 
-      // Interaktiv bedømmelse på kagens side
+      // Interaktiv bedømmelse på kagens side (1 bedømmelse pr. bruger, kan ændres)
       const btnGroup = document.getElementById("detail-rate-buttons");
       const buttons = btnGroup.querySelectorAll(".rate-cake-btn");
       const feedbackEl = document.getElementById("detail-rate-feedback");
+      const subtitleEl = document.getElementById("rate-box-subtitle");
       const summaryIconsEl = document.getElementById("detail-static-icons");
       const summaryLabelEl = document.getElementById("detail-rating-label");
 
@@ -146,11 +155,14 @@
 
             buttons.forEach((b) => {
               const bVal = Number(b.getAttribute("data-rating"));
-              b.classList.toggle("filled", bVal <= updatedStats.rounded);
-              b.classList.toggle("empty", bVal > updatedStats.rounded);
+              b.classList.toggle("filled", bVal <= rating);
+              b.classList.toggle("empty", bVal > rating);
             });
 
-            feedbackEl.textContent = `Tak! Du gav kagen ${rating} ${rating === 1 ? "kage" : "kager"}. Gennemsnit: ${updatedStats.label}`;
+            subtitleEl.textContent = `Du har givet denne kage ${rating} ${rating === 1 ? "kage" : "kager"} (klik på et andet tal for at ændre din bedømmelse):`;
+            feedbackEl.textContent = res.isUpdate
+              ? `Din bedømmelse er ændret til ${rating} ${rating === 1 ? "kage" : "kager"}! Gennemsnit: ${updatedStats.label}`
+              : `Tak for din bedømmelse! Gennemsnit: ${updatedStats.label}`;
             feedbackEl.style.display = "block";
           }
         });

@@ -149,6 +149,9 @@
             <button type="button" id="toggle-publish-btn" class="btn btn-secondary" style="display: none;">
               Skjul kage (Upublicer)
             </button>
+            <button type="button" id="reset-ratings-btn" class="btn btn-secondary" style="display: none;">
+              🔄 Nulstil bedømmelser
+            </button>
             <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Annuller</button>
           </div>
           <button type="button" id="delete-cake-btn" class="btn btn-danger" style="display: none;">
@@ -163,9 +166,9 @@
     <p>🧁 Mathildes Kager &bull; Administrationspanel</p>
   </footer>
 
-  <script src="supabase-config.js?v=5"></script>
-  <script src="cakes.js?v=5"></script>
-  <script src="store.js?v=5"></script>
+  <script src="supabase-config.js?v=8"></script>
+  <script src="cakes.js?v=8"></script>
+  <script src="store.js?v=8"></script>
   <script>
     (function initAdminPage() {
       const loginView = document.getElementById("admin-login-view");
@@ -189,6 +192,7 @@
       const uploadStatusMsg = document.getElementById("upload-status-msg");
       const publishedCheckbox = document.getElementById("cake-published-checkbox");
       const togglePublishBtn = document.getElementById("toggle-publish-btn");
+      const resetRatingsBtn = document.getElementById("reset-ratings-btn");
       const deleteCakeBtn = document.getElementById("delete-cake-btn");
       const editorErrorMsg = document.getElementById("editor-error-msg");
 
@@ -293,14 +297,16 @@
           imageUrlInput.value = "";
           publishedCheckbox.checked = true;
           togglePublishBtn.style.display = "none";
+          resetRatingsBtn.style.display = "none";
           deleteCakeBtn.style.display = "none";
           updateImagePreview("");
         } else {
           const cake = allCakes.find((c) => c.id === cakeId);
           if (!cake) return;
 
+          const stats = CakeStore.getRatingStats(cake);
           editorHeading.textContent = "Rediger kage";
-          editorMetaInfo.textContent = `ID: ${cake.id} • Tilføjet: ${cake.dateAdded || ""}`;
+          editorMetaInfo.textContent = `ID: ${cake.id} • Tilføjet: ${cake.dateAdded || ""} • Bedømmelse: ${stats.label}`;
           titleInput.value = cake.title || "";
           shortDescInput.value = cake.shortDescription || "";
           ingredientsInput.value = Array.isArray(cake.ingredients)
@@ -309,6 +315,7 @@
           imageUrlInput.value = cake.image || "";
           publishedCheckbox.checked = cake.published !== false;
           togglePublishBtn.style.display = "inline-flex";
+          resetRatingsBtn.style.display = "inline-flex";
           deleteCakeBtn.style.display = "inline-flex";
           updateTogglePublishButtonText();
           updateImagePreview(cake.image || "");
@@ -361,6 +368,25 @@
               : "Kagen er nu skjult (upubliceret) fra den offentlige hjemmeside."
           );
           showListView();
+        }
+      });
+
+      // Nulstil bedømmelser
+      resetRatingsBtn.addEventListener("click", async () => {
+        if (!editingCakeId) return;
+        const cake = allCakes.find((c) => c.id === editingCakeId);
+        const confirmed = window.confirm(
+          `Vil du nulstille alle bedømmelser for "${cake ? cake.title : "denne kage"}"?`
+        );
+        if (!confirmed) return;
+
+        const res = await CakeStore.resetRatings(editingCakeId);
+        if (res.ok) {
+          showToast("Bedømmelserne blev nulstillet.");
+          showListView();
+        } else {
+          editorErrorMsg.textContent = res.error || "Kunne ikke nulstille bedømmelserne.";
+          editorErrorMsg.style.display = "block";
         }
       });
 

@@ -235,6 +235,9 @@ class CakeRequestHandler(SimpleHTTPRequestHandler):
             try:
                 data = self.read_json_body()
                 rating = int(data.get("rating", 0))
+                voter_id = (data.get("voterId") or "").strip()
+                if not voter_id:
+                    voter_id = sha256_hex(self.client_address[0] if self.client_address else "anon")
                 if rating < 1 or rating > 5:
                     self.send_json(400, {"ok": False, "error": "Bedømmelsen skal være mellem 1 og 5 kager"})
                     return
@@ -252,7 +255,17 @@ class CakeRequestHandler(SimpleHTTPRequestHandler):
 
                 if not isinstance(target.get("ratings"), list):
                     target["ratings"] = []
-                target["ratings"].append(rating)
+                if not isinstance(target.get("voterRatings"), dict):
+                    target["voterRatings"] = {}
+
+                old_rating = target["voterRatings"].get(voter_id)
+                if old_rating is not None and old_rating in target["ratings"]:
+                    idx = target["ratings"].index(old_rating)
+                    target["ratings"][idx] = rating
+                else:
+                    target["ratings"].append(rating)
+                target["voterRatings"][voter_id] = rating
+
                 save_cakes(cakes)
                 self.send_json(200, {"ok": True, "cake": target, "cakes": cakes})
             except Exception as e:
@@ -291,6 +304,10 @@ class CakeRequestHandler(SimpleHTTPRequestHandler):
                     target["image"] = data["image"].strip()
                 if "published" in data:
                     target["published"] = bool(data["published"])
+                if "ratings" in data and isinstance(data["ratings"], list):
+                    target["ratings"] = data["ratings"]
+                    if len(data["ratings"]) == 0:
+                        target["voterRatings"] = {}
 
                 save_cakes(cakes)
                 self.send_json(200, {"ok": True, "cake": target, "cakes": cakes})

@@ -818,9 +818,13 @@ body {
   filter: none;
 }
 
-.rate-cake-btn:hover,
+.rate-cake-btn:hover:not(:disabled),
 .rate-cake-btn.hover-active {
   transform: scale(1.18);
+}
+
+.rate-cake-btn:disabled {
+  cursor: default;
 }
 
 .cake-rating-text {
