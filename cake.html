@@ -29,9 +29,9 @@
     <p>🧁 Mathildes Kager &bull; <a href="index.html" style="color: inherit;">Tilbage til forsiden</a></p>
   </footer>
 
-  <script src="supabase-config.js?v=8"></script>
-  <script src="cakes.js?v=8"></script>
-  <script src="store.js?v=8"></script>
+  <script src="supabase-config.js?v=9"></script>
+  <script src="cakes.js?v=9"></script>
+  <script src="store.js?v=9"></script>
   <script>
     CakeStore.setupHeaderLoginButton();
 
@@ -177,8 +177,8 @@
 
             subtitleEl.textContent = getSubtitleText(currentUserVote);
 
-            if (res.action === "removed" || res.isRemoval) {
-              feedbackEl.textContent = `Din bedømmelse er fjernet. Gennemsnit: ${updatedStats.label}`;
+            if (res.action === "removed" || res.isRemoval || !currentUserVote) {
+              feedbackEl.textContent = "Din bedømmelse er fjernet.";
             } else if (res.isUpdate) {
               feedbackEl.textContent = `Din bedømmelse er ændret til ${currentUserVote} ${currentUserVote === 1 ? "kage" : "kager"}! Gennemsnit: ${updatedStats.label}`;
             } else {
