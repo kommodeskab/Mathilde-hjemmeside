@@ -29,9 +29,9 @@
     <p>🧁 Mathildes Kager &bull; <a href="index.html" style="color: inherit;">Tilbage til forsiden</a></p>
   </footer>
 
-  <script src="supabase-config.js?v=9"></script>
-  <script src="cakes.js?v=9"></script>
-  <script src="store.js?v=9"></script>
+  <script src="supabase-config.js?v=10"></script>
+  <script src="cakes.js?v=10"></script>
+  <script src="store.js?v=10"></script>
   <script>
     CakeStore.setupHeaderLoginButton();
 
@@ -71,6 +71,17 @@
           return `Ændr din bedømmelse til ${btnNum} ${btnNum === 1 ? "kage" : "kager"}`;
         }
         return `Giv ${btnNum} ${btnNum === 1 ? "kage" : "kager"}`;
+      }
+
+      function renderRateBoxAverage(currentStats) {
+        if (!currentStats || currentStats.count === 0) {
+          return '<span class="rate-box-average-empty">Ingen anmeldelser endnu</span>';
+        }
+        const reviewWord = currentStats.count === 1 ? "anmeldelse" : "anmeldelser";
+        return `
+          <div class="static-cake-icons" aria-hidden="true">${CakeStore.renderStaticCakeIcons(currentStats.rounded)}</div>
+          <span class="rate-box-average-text">Gennemsnit: ${currentStats.formattedAverage} / 5 (${currentStats.count} ${reviewWord})</span>
+        `;
       }
 
       const ingredientsHtml =
@@ -129,6 +140,9 @@
               )
               .join("")}
           </div>
+          <div class="rate-box-average" id="rate-box-average">
+            ${renderRateBoxAverage(stats)}
+          </div>
           <p id="detail-rate-feedback" class="rate-feedback-msg" style="display: none;"></p>
         </section>
 
@@ -142,6 +156,7 @@
       const subtitleEl = document.getElementById("rate-box-subtitle");
       const summaryIconsEl = document.getElementById("detail-static-icons");
       const summaryLabelEl = document.getElementById("detail-rating-label");
+      const rateBoxAvgEl = document.getElementById("rate-box-average");
 
       buttons.forEach((btn) => {
         btn.addEventListener("mouseenter", () => {
@@ -162,8 +177,9 @@
           if (res.ok && res.cake) {
             cake = res.cake;
             const updatedStats = CakeStore.getRatingStats(res.cake);
-            summaryIconsEl.innerHTML = CakeStore.renderStaticCakeIcons(updatedStats.rounded);
-            summaryLabelEl.textContent = updatedStats.label;
+            if (summaryIconsEl) summaryIconsEl.innerHTML = CakeStore.renderStaticCakeIcons(updatedStats.rounded);
+            if (summaryLabelEl) summaryLabelEl.textContent = updatedStats.label;
+            if (rateBoxAvgEl) rateBoxAvgEl.innerHTML = renderRateBoxAverage(updatedStats);
 
             const currentUserVote = CakeStore.getUserRatingForCake(res.cake);
             const filledCount = currentUserVote || 0;
@@ -180,9 +196,9 @@
             if (res.action === "removed" || res.isRemoval || !currentUserVote) {
               feedbackEl.textContent = "Din bedømmelse er fjernet.";
             } else if (res.isUpdate) {
-              feedbackEl.textContent = `Din bedømmelse er ændret til ${currentUserVote} ${currentUserVote === 1 ? "kage" : "kager"}! Gennemsnit: ${updatedStats.label}`;
+              feedbackEl.textContent = `Din bedømmelse er ændret til ${currentUserVote} ${currentUserVote === 1 ? "kage" : "kager"}!`;
             } else {
-              feedbackEl.textContent = `Tak for din bedømmelse! Gennemsnit: ${updatedStats.label}`;
+              feedbackEl.textContent = "Tak for din bedømmelse!";
             }
             feedbackEl.style.display = "block";
           }

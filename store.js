@@ -499,14 +499,14 @@ const CakeStore = (function () {
         average: 0,
         rounded: 0,
         formattedAverage: "0,0",
-        label: "Ingen bedømmelser endnu"
+        label: "Ingen anmeldelser endnu"
       };
     }
     const sum = ratings.reduce((acc, val) => acc + val, 0);
     const average = sum / count;
     const rounded = Math.round(average);
     const formattedAverage = average.toFixed(1).replace(".", ",");
-    const countWord = count === 1 ? "bedømmelse" : "bedømmelser";
+    const countWord = count === 1 ? "anmeldelse" : "anmeldelser";
     return {
       count,
       average,
