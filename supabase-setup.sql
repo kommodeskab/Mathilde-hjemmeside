@@ -40,8 +40,9 @@ CREATE POLICY "Alle kan læse kager"
   FOR SELECT
   USING (true);
 
--- 3. Funktion så hver besøgende har én bedømmelse pr. kage, men kan ændre sin bedømmelse
+-- 3. Funktion så hver besøgende har én bedømmelse pr. kage, kan ændre den eller fjerne den ved at trykke igen
 DROP FUNCTION IF EXISTS public.rate_cake(TEXT, INTEGER);
+DROP FUNCTION IF EXISTS public.rate_cake(TEXT, INTEGER, TEXT);
 CREATE OR REPLACE FUNCTION public.rate_cake(
   cake_id TEXT,
   new_rating INTEGER,
@@ -57,11 +58,8 @@ DECLARE
   old_rating INTEGER;
   current_ratings INTEGER[];
   pos INTEGER;
+  arr_len INTEGER;
 BEGIN
-  IF new_rating < 1 OR new_rating > 5 THEN
-    RAISE EXCEPTION 'Bedømmelsen skal være mellem 1 og 5';
-  END IF;
-
   effective_voter := NULLIF(TRIM(COALESCE(voter_id, '')), '');
   IF effective_voter IS NULL THEN
     -- Fallback til besøgendes IP-hash hvis voter_id ikke er angivet
@@ -80,12 +78,57 @@ BEGIN
   FROM public.cake_votes cv
   WHERE cv.cake_id = rate_cake.cake_id AND cv.voter_id = effective_voter;
 
+  -- Hvis brugeren trykker på samme rating igen (eller sender <= 0 / NULL), fjernes bedømmelsen
+  IF new_rating IS NULL OR new_rating <= 0 OR (old_rating IS NOT NULL AND new_rating = old_rating) THEN
+    IF old_rating IS NOT NULL THEN
+      DELETE FROM public.cake_votes
+      WHERE cake_votes.cake_id = rate_cake.cake_id AND cake_votes.voter_id = effective_voter;
+
+      SELECT c.ratings INTO current_ratings
+      FROM public.cakes c
+      WHERE c.id = rate_cake.cake_id;
+
+      pos := array_position(current_ratings, old_rating);
+      IF pos IS NOT NULL THEN
+        arr_len := array_length(current_ratings, 1);
+        IF arr_len IS NULL OR arr_len <= 1 THEN
+          current_ratings := '{}'::integer[];
+        ELSIF pos = 1 THEN
+          current_ratings := current_ratings[2:arr_len];
+        ELSIF pos = arr_len THEN
+          current_ratings := current_ratings[1:arr_len-1];
+        ELSE
+          current_ratings := current_ratings[1:pos-1] || current_ratings[pos+1:arr_len];
+        END IF;
+      END IF;
+
+      UPDATE public.cakes
+      SET ratings = COALESCE(current_ratings, '{}'::integer[])
+      WHERE id = rate_cake.cake_id
+      RETURNING * INTO updated_row;
+    ELSE
+      SELECT * INTO updated_row
+      FROM public.cakes
+      WHERE id = rate_cake.cake_id;
+    END IF;
+
+    IF updated_row.id IS NULL THEN
+      RAISE EXCEPTION 'Kagen blev ikke fundet';
+    END IF;
+
+    RETURN row_to_json(updated_row);
+  END IF;
+
+  IF new_rating < 1 OR new_rating > 5 THEN
+    RAISE EXCEPTION 'Bedømmelsen skal være mellem 1 og 5';
+  END IF;
+
   IF old_rating IS NULL THEN
     INSERT INTO public.cake_votes (cake_id, voter_id, rating)
     VALUES (rate_cake.cake_id, effective_voter, new_rating);
 
     UPDATE public.cakes
-    SET ratings = array_append(ratings, new_rating)
+    SET ratings = array_append(COALESCE(ratings, '{}'::integer[]), new_rating)
     WHERE id = rate_cake.cake_id
     RETURNING * INTO updated_row;
   ELSE
@@ -101,11 +144,11 @@ BEGIN
     IF pos IS NOT NULL THEN
       current_ratings[pos] := new_rating;
     ELSE
-      current_ratings := array_append(COALESCE(current_ratings, '{}'), new_rating);
+      current_ratings := array_append(COALESCE(current_ratings, '{}'::integer[]), new_rating);
     END IF;
 
     UPDATE public.cakes
-    SET ratings = current_ratings
+    SET ratings = COALESCE(current_ratings, '{}'::integer[])
     WHERE id = rate_cake.cake_id
     RETURNING * INTO updated_row;
   END IF;
@@ -115,6 +158,20 @@ BEGIN
   END IF;
 
   RETURN row_to_json(updated_row);
+END;
+$$;
+
+-- Ekstra funktion til eksplicit afregistrering af bedømmelse
+CREATE OR REPLACE FUNCTION public.remove_cake_rating(
+  cake_id TEXT,
+  voter_id TEXT DEFAULT NULL
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN public.rate_cake(cake_id, 0, voter_id);
 END;
 $$;
 
@@ -259,68 +316,3 @@ BEGIN
   RETURN row_to_json(updated_row);
 END;
 $$;
-
--- 5. Indsæt de 6 start-kager (hvis de ikke allerede findes)
-INSERT INTO public.cakes (id, title, date_added, published, ratings, short_description, ingredients, image)
-VALUES
-  (
-    'kaempe-hindbaersnitte-i-bradepande',
-    'Kæmpe hindbærsnitte i bradepande',
-    '20. oktober 2026',
-    true,
-    '{}',
-    'Klassisk, sprød hindbærsnitte bagt i en hel bradepande med sød hindbærmarmelade, tyk glasur og farverigt krymmel.',
-    ARRAY['Hvedemel', 'Flormelis', 'Bagepulver', 'Smør', 'Æg', 'Hindbærmarmelade', 'Krymmel'],
-    'uploads/hindbaersnitte.jpg'
-  ),
-  (
-    'studenterbroed',
-    'Studenterbrød',
-    '20. oktober 2026',
-    true,
-    '{}',
-    'Hjemmelavede studenterbrød med sprød mørdejsbund, hindbærmarmelade, fyldig kakaotrøffel og lyserød glasur med krymmel.',
-    ARRAY['Hvedemel', 'Flormelis', 'Salt', 'Smør', 'Æg', 'Vand', 'Kagerester', 'Mørk chokolade', 'Marcipan', 'Mørk rom', 'Hindbærmarmelade', 'Lyserød farvepasta', 'Krymmel'],
-    'uploads/studenterbroed.jpg'
-  ),
-  (
-    'hindbaermuffins-med-hvid-chokolade',
-    'Hindbærmuffins med hvid chokolade',
-    '20. oktober 2026',
-    true,
-    '{}',
-    'Svampede og luftige vaniljemuffins fyldt med syrlige hindbær og stykker af sød hvid chokolade.',
-    ARRAY['Smør', 'Æg', 'Sukker', 'Sødmælk', 'Hvedemel', 'Bagepulver', 'Vaniljesukker', 'Hvid chokolade', 'Hindbær'],
-    'uploads/hindbaermuffins.jpg'
-  ),
-  (
-    'pavlova',
-    'Pavlova med friske bær',
-    '20. oktober 2026',
-    true,
-    '{}',
-    'Luftig marengskage med sprød yderside og sej midte, toppet med blødt flødeskum og masser af friske sommerbær.',
-    ARRAY['Æggehvider', 'Sukker', 'Majsstivelse', 'Hvidvinseddike', 'Vaniljesukker', 'Piskefløde', 'Friske bær', 'Flormelis'],
-    'uploads/pavlova.jpg'
-  ),
-  (
-    'chokoladekage-med-oreo',
-    'Chokoladekage med Oreo',
-    '20. oktober 2026',
-    true,
-    '{}',
-    'Snasket og syndig chokoladekage med hakket mørk chokolade, blød chokoladeglasur og masser af knuste Oreo-kiks.',
-    ARRAY['Hvedemel', 'Sukker', 'Raps- eller solsikkeolie', 'Bagepulver', 'Æg', 'Mælk', 'Bagekakao', 'Salt', 'Mørk chokolade', 'Oreo-kiks', 'Smør', 'Flormelis', 'Vand', 'Vaniljesukker'],
-    'uploads/chokoladekage-med-oreo.png'
-  ),
-  (
-    'verdens-bedste-chocolate-chip-cookies',
-    'Verdens bedste chocolate chip cookies',
-    '20. oktober 2026',
-    true,
-    '{}',
-    'Klassiske amerikanske chocolate chip cookies med sprøde kanter, sej midte, ægte vanilje, store stykker mørk chokolade og flagesalt.',
-    ARRAY['Hvedemel', 'Natron', 'Bagepulver', 'Fint salt', 'Smør', 'Brun farin', 'Sukker', 'Æg', 'Vaniljestang', 'Mørk chokolade', 'Havsalt'],
-    'uploads/chocolate-chip-cookies.jpg'
-  )
-ON CONFLICT (id) DO NOTHING;

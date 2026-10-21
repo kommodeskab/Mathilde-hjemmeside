@@ -238,9 +238,6 @@ class CakeRequestHandler(SimpleHTTPRequestHandler):
                 voter_id = (data.get("voterId") or "").strip()
                 if not voter_id:
                     voter_id = sha256_hex(self.client_address[0] if self.client_address else "anon")
-                if rating < 1 or rating > 5:
-                    self.send_json(400, {"ok": False, "error": "Bedømmelsen skal være mellem 1 og 5 kager"})
-                    return
 
                 cakes = load_cakes()
                 target = None
@@ -259,6 +256,24 @@ class CakeRequestHandler(SimpleHTTPRequestHandler):
                     target["voterRatings"] = {}
 
                 old_rating = target["voterRatings"].get(voter_id)
+                is_removal = (
+                    data.get("remove") is True
+                    or rating <= 0
+                    or (old_rating is not None and old_rating == rating)
+                )
+
+                if is_removal:
+                    if old_rating is not None and old_rating in target["ratings"]:
+                        target["ratings"].remove(old_rating)
+                    target["voterRatings"].pop(voter_id, None)
+                    save_cakes(cakes)
+                    self.send_json(200, {"ok": True, "action": "removed", "isRemoval": True, "cake": target, "cakes": cakes})
+                    return
+
+                if rating < 1 or rating > 5:
+                    self.send_json(400, {"ok": False, "error": "Bedømmelsen skal være mellem 1 og 5 kager"})
+                    return
+
                 if old_rating is not None and old_rating in target["ratings"]:
                     idx = target["ratings"].index(old_rating)
                     target["ratings"][idx] = rating
@@ -267,7 +282,8 @@ class CakeRequestHandler(SimpleHTTPRequestHandler):
                 target["voterRatings"][voter_id] = rating
 
                 save_cakes(cakes)
-                self.send_json(200, {"ok": True, "cake": target, "cakes": cakes})
+                action = "updated" if old_rating is not None else "created"
+                self.send_json(200, {"ok": True, "action": action, "isUpdate": old_rating is not None, "isRemoval": False, "cake": target, "cakes": cakes})
             except Exception as e:
                 self.send_json(400, {"ok": False, "error": f"Ugyldig bedømmelse: {e}"})
             return
@@ -337,7 +353,6 @@ class CakeRequestHandler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    os.makedirs(UPLOADS_DIR, exist_ok=True)
     server = ThreadingHTTPServer(("0.0.0.0", PORT), CakeRequestHandler)
     print(f"🎂 Mathildes Kager server kører på http://localhost:{PORT}")
     print("Tryk Ctrl+C for at stoppe serveren.")

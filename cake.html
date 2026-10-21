@@ -43,7 +43,7 @@
       const cakeId = params.get("id");
 
       const cakes = await CakeStore.getPublishedCakes();
-      const cake = cakes.find((item) => item.id === cakeId);
+      let cake = cakes.find((item) => item.id === cakeId);
 
       if (!cake) {
         container.innerHTML = `<p>Kagen blev ikke fundet. <a href="index.html">Gå tilbage til forsiden</a>.</p>`;
@@ -54,7 +54,24 @@
 
       const stats = CakeStore.getRatingStats(cake);
       const userExistingRating = CakeStore.getUserRatingForCake(cake);
-      const activeCakeCount = userExistingRating || stats.rounded;
+      const activeCakeCount = userExistingRating !== null ? userExistingRating : 0;
+
+      function getSubtitleText(userRating) {
+        if (userRating) {
+          return `Du har givet denne kage ${userRating} ${userRating === 1 ? "kage" : "kager"} (klik på ${userRating} igen for at fjerne din bedømmelse, eller vælg et andet tal):`;
+        }
+        return "Klik på 1 til 5 kager for at give din bedømmelse:";
+      }
+
+      function getButtonTitle(btnNum, userRating) {
+        if (userRating === btnNum) {
+          return `Klik for at fjerne din bedømmelse (${btnNum} ${btnNum === 1 ? "kage" : "kager"})`;
+        }
+        if (userRating) {
+          return `Ændr din bedømmelse til ${btnNum} ${btnNum === 1 ? "kage" : "kager"}`;
+        }
+        return `Giv ${btnNum} ${btnNum === 1 ? "kage" : "kager"}`;
+      }
 
       const ingredientsHtml =
         Array.isArray(cake.ingredients) && cake.ingredients.length > 0
@@ -93,13 +110,7 @@
 
         <section class="rate-this-cake-box">
           <h2>🍰 Bedøm denne kage</h2>
-          <p class="rate-box-subtitle" id="rate-box-subtitle">
-            ${
-              userExistingRating
-                ? `Du har givet denne kage ${userExistingRating} ${userExistingRating === 1 ? "kage" : "kager"} (klik på et andet tal for at ændre din bedømmelse):`
-                : "Klik på 1 til 5 kager for at give din bedømmelse:"
-            }
-          </p>
+          <p class="rate-box-subtitle" id="rate-box-subtitle">${getSubtitleText(userExistingRating)}</p>
           <div class="cake-rating-buttons large-rating-buttons" id="detail-rate-buttons" role="group" aria-label="Bedøm fra 1 til 5 kager">
             ${[1, 2, 3, 4, 5]
               .map(
@@ -108,7 +119,7 @@
                   type="button"
                   class="rate-cake-btn ${num <= activeCakeCount ? "filled" : "empty"}"
                   data-rating="${num}"
-                  title="Giv ${num} ${num === 1 ? "kage" : "kager"}"
+                  title="${getButtonTitle(num, userExistingRating)}"
                   aria-label="Giv ${num} ${num === 1 ? "kage" : "kager"}"
                 >
                   <span class="rate-btn-emoji">🍰</span>
@@ -124,7 +135,7 @@
         ${ingredientsHtml}
       `;
 
-      // Interaktiv bedømmelse på kagens side (1 bedømmelse pr. bruger, kan ændres)
+      // Interaktiv bedømmelse på kagens side (1 bedømmelse pr. bruger, kan ændres eller fjernes)
       const btnGroup = document.getElementById("detail-rate-buttons");
       const buttons = btnGroup.querySelectorAll(".rate-cake-btn");
       const feedbackEl = document.getElementById("detail-rate-feedback");
@@ -149,20 +160,30 @@
           const rating = Number(btn.getAttribute("data-rating"));
           const res = await CakeStore.rateCake(cake.id, rating);
           if (res.ok && res.cake) {
+            cake = res.cake;
             const updatedStats = CakeStore.getRatingStats(res.cake);
             summaryIconsEl.innerHTML = CakeStore.renderStaticCakeIcons(updatedStats.rounded);
             summaryLabelEl.textContent = updatedStats.label;
 
+            const currentUserVote = CakeStore.getUserRatingForCake(res.cake);
+            const filledCount = currentUserVote || 0;
+
             buttons.forEach((b) => {
               const bVal = Number(b.getAttribute("data-rating"));
-              b.classList.toggle("filled", bVal <= rating);
-              b.classList.toggle("empty", bVal > rating);
+              b.classList.toggle("filled", bVal <= filledCount);
+              b.classList.toggle("empty", bVal > filledCount);
+              b.title = getButtonTitle(bVal, currentUserVote);
             });
 
-            subtitleEl.textContent = `Du har givet denne kage ${rating} ${rating === 1 ? "kage" : "kager"} (klik på et andet tal for at ændre din bedømmelse):`;
-            feedbackEl.textContent = res.isUpdate
-              ? `Din bedømmelse er ændret til ${rating} ${rating === 1 ? "kage" : "kager"}! Gennemsnit: ${updatedStats.label}`
-              : `Tak for din bedømmelse! Gennemsnit: ${updatedStats.label}`;
+            subtitleEl.textContent = getSubtitleText(currentUserVote);
+
+            if (res.action === "removed" || res.isRemoval) {
+              feedbackEl.textContent = `Din bedømmelse er fjernet. Gennemsnit: ${updatedStats.label}`;
+            } else if (res.isUpdate) {
+              feedbackEl.textContent = `Din bedømmelse er ændret til ${currentUserVote} ${currentUserVote === 1 ? "kage" : "kager"}! Gennemsnit: ${updatedStats.label}`;
+            } else {
+              feedbackEl.textContent = `Tak for din bedømmelse! Gennemsnit: ${updatedStats.label}`;
+            }
             feedbackEl.style.display = "block";
           }
         });

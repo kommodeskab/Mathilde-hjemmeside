@@ -405,13 +405,16 @@ const CakeStore = (function () {
 
   async function rateCake(id, ratingValue) {
     const rating = Number(ratingValue);
-    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    if (!Number.isInteger(rating) || rating < 0 || rating > 5) {
       return { ok: false, error: "Bedømmelsen skal være mellem 1 og 5 kager" };
     }
 
     const voterId = getVoterId();
     const previousVote = getUserVotesMap()[id] || null;
-    const isUpdate = Boolean(previousVote);
+    const isRemoval = rating === 0 || (previousVote !== null && Number(previousVote) === rating);
+    const targetRating = isRemoval ? 0 : rating;
+    const isUpdate = Boolean(previousVote) && !isRemoval;
+    const action = isRemoval ? "removed" : isUpdate ? "updated" : "created";
 
     if (isSupabaseConfigured()) {
       try {
@@ -420,16 +423,17 @@ const CakeStore = (function () {
           headers: supabaseHeaders(),
           body: JSON.stringify({
             cake_id: id,
-            new_rating: rating,
+            new_rating: targetRating,
             voter_id: voterId
           })
         });
         if (res.ok) {
-          saveUserVote(id, rating);
+          saveUserVote(id, isRemoval ? null : rating);
           const updatedRow = await res.json();
-          const cake = mapRowFromSupabase(updatedRow);
+          const row = updatedRow && updatedRow.cake ? updatedRow.cake : updatedRow;
+          const cake = mapRowFromSupabase(row);
           const cakes = await getAllCakes();
-          return { ok: true, isUpdate, cake, cakes };
+          return { ok: true, action, isUpdate, isRemoval, cake, cakes };
         }
       } catch (_err) {}
     }
@@ -438,13 +442,13 @@ const CakeStore = (function () {
       const res = await fetch(`/api/cakes/${encodeURIComponent(id)}/rate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, voterId })
+        body: JSON.stringify({ rating: targetRating, voterId, remove: isRemoval })
       });
       if (res.ok) {
-        saveUserVote(id, rating);
+        saveUserVote(id, isRemoval ? null : rating);
         const data = await res.json();
         saveLocalFallbackCakes(data.cakes);
-        return { ok: true, isUpdate, cake: data.cake, cakes: data.cakes };
+        return { ok: true, action, isUpdate, isRemoval, cake: data.cake, cakes: data.cakes };
       }
     } catch (_networkError) {}
 
@@ -456,19 +460,32 @@ const CakeStore = (function () {
     if (!Array.isArray(target.ratings)) {
       target.ratings = [];
     }
-    if (previousVote !== null) {
+    if (isRemoval) {
+      if (previousVote !== null) {
+        const idx = target.ratings.indexOf(Number(previousVote));
+        if (idx !== -1) {
+          target.ratings.splice(idx, 1);
+        }
+      }
+      saveUserVote(id, null);
+    } else if (previousVote !== null) {
       const idx = target.ratings.indexOf(Number(previousVote));
       if (idx !== -1) {
         target.ratings[idx] = rating;
       } else {
         target.ratings.push(rating);
       }
+      saveUserVote(id, rating);
     } else {
       target.ratings.push(rating);
+      saveUserVote(id, rating);
     }
-    saveUserVote(id, rating);
     saveLocalFallbackCakes(cakes);
-    return { ok: true, isUpdate, cake: target, cakes };
+    return { ok: true, action, isUpdate, isRemoval, cake: target, cakes };
+  }
+
+  async function removeRating(id) {
+    return rateCake(id, 0);
   }
 
   function getRatingStats(cake) {
@@ -801,6 +818,7 @@ const CakeStore = (function () {
     deleteCake,
     resetRatings,
     rateCake,
+    removeRating,
     getUserRatingForCake,
     getRatingStats,
     renderStaticCakeIcons,
